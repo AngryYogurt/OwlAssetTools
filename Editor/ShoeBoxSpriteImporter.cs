@@ -41,6 +41,7 @@ namespace Assets.OwlAssetTools.Editor
                     return;
                 }
             }
+
             var destName = "asset_" + Path.GetFileName(texturePath);
             var destPath = Path.Combine(dir, destName);
 
@@ -70,6 +71,7 @@ namespace Assets.OwlAssetTools.Editor
                 sheet.Add(sprite);
             }
 
+            var isometricWidth = Mathf.Floor(CalPixelPerUnit(sheet[0].rect.width));
             var path = AssetDatabase.GetAssetPath(texture);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
             importer.spritesheet = sheet.ToArray();
@@ -77,11 +79,30 @@ namespace Assets.OwlAssetTools.Editor
 
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
-            settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
-            settings.mipmapEnabled = false;
             settings.spriteMode = (int) SpriteImportMode.Multiple;
+            settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
+
+            settings.spriteAlignment = (int) SpriteAlignment.Custom;
+            settings.spritePivot = CalSpritePivot(isometricWidth, sheet[0].rect.height);
+
+            settings.spritePixelsPerUnit = isometricWidth;
+            settings.mipmapEnabled = false;
+
             importer.SetTextureSettings(settings);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+        }
+
+        private static Vector2 CalSpritePivot(float isometricWidth, float height)
+        {
+            return new Vector2(0.5f, (float) (1f / 2f / (height / isometricWidth)));
+        }
+
+
+        private static float CalPixelPerUnit(float width)
+        {
+            //((width / 2) ^ 2 * 4 / 3) ^ (1 / 2);
+            return Mathf.Pow((width * width) / 3, 0.5f);
+            ;
         }
     }
 }
