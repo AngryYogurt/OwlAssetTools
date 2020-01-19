@@ -9,7 +9,7 @@ namespace Assets.OwlAssetTools.Editor
 {
     /// <summary>
     /// Import sprites made with ShoeBox.
-    /// This tool assumes your Assets directory like:
+    /// This tool assumes your asset is isometric tiles and Assets directory like:
     /// Assets
     ///   -.../...
     ///     - sprites_sheet.xml           <- resource ShoeBox sprite file
@@ -50,59 +50,44 @@ namespace Assets.OwlAssetTools.Editor
             var assetPath = "Assets" + destPath.Substring(Application.dataPath.Length);
             AssetDatabase.Refresh();
             var texture = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture2D)) as Texture2D;
-            var sheet = new List<SpriteMetaData>();
+            var smds = new List<SpriteMetaData>();
             var elements = xml.Elements("SubTexture");
 
             foreach (var e in elements)
             {
                 var h = (float) e.Attribute("height");
+                var r = new Rect
+                {
+                    width = (float) e.Attribute("width"),
+                    height = h,
+                    x = (float) e.Attribute("x"),
+                    y = texture.height - (float) e.Attribute("y") - h
+                };
                 var sprite = new SpriteMetaData
                 {
-                    rect = new Rect
-                    {
-                        width = (float) e.Attribute("width"),
-                        height = h,
-                        x = (float) e.Attribute("x"),
-                        y = texture.height - (float) e.Attribute("y") - h
-                    },
-                    name = e.Attribute("name").Value
+                    rect = r,
+                    name = Path.GetFileNameWithoutExtension(e.Attribute("name").Value)
                 };
-                sprite.name = Path.GetFileNameWithoutExtension(sprite.name);
-                sheet.Add(sprite);
+                var isometricWidth = Mathf.Floor(Util.CalPixelPerUnit(r.width));
+                sprite.pivot = Util.CalSpritePivot(isometricWidth, r.height);
+                sprite.alignment = (int) SpriteAlignment.Custom;
+                smds.Add(sprite);
             }
 
-            var isometricWidth = Mathf.Floor(CalPixelPerUnit(sheet[0].rect.width));
             var path = AssetDatabase.GetAssetPath(texture);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            importer.spritesheet = sheet.ToArray();
+            importer.spritesheet = smds.ToArray();
             importer.textureType = TextureImporterType.Sprite;
 
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteMode = (int) SpriteImportMode.Multiple;
             settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
-
-            settings.spriteAlignment = (int) SpriteAlignment.Custom;
-            settings.spritePivot = CalSpritePivot(isometricWidth, sheet[0].rect.height);
-
-            settings.spritePixelsPerUnit = isometricWidth;
+            settings.spritePixelsPerUnit = Mathf.Floor(Util.CalPixelPerUnit(smds[0].rect.width));
             settings.mipmapEnabled = false;
 
             importer.SetTextureSettings(settings);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-        }
-
-        private static Vector2 CalSpritePivot(float isometricWidth, float height)
-        {
-            return new Vector2(0.5f, (float) (1f / 2f / (height / isometricWidth)));
-        }
-
-
-        private static float CalPixelPerUnit(float width)
-        {
-            //((width / 2) ^ 2 * 4 / 3) ^ (1 / 2);
-            return Mathf.Pow((width * width) / 3, 0.5f);
-            ;
         }
     }
 }
