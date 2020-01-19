@@ -68,8 +68,7 @@ namespace Assets.OwlAssetTools.Editor
                     rect = r,
                     name = Path.GetFileNameWithoutExtension(e.Attribute("name").Value)
                 };
-                var isometricWidth = Mathf.Floor(Util.CalPixelPerUnit(r.width));
-                sprite.pivot = Util.CalSpritePivot(isometricWidth, r.height);
+                sprite.pivot = Util.CalSpritePivot(r.width, r.height);
                 sprite.alignment = (int) SpriteAlignment.Custom;
                 smds.Add(sprite);
             }

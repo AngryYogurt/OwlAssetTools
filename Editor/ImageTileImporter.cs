@@ -97,7 +97,6 @@ namespace Assets.OwlAssetTools.Editor
                     rect = r,
                     name = Path.GetFileNameWithoutExtension(targetFile)
                 };
-                var isometricWidth = Mathf.Floor(CalPixelPerUnit(r.width));
 
                 var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture)) as TextureImporter;
                 importer.spritesheet = new SpriteMetaData[1] {sprite};
@@ -105,14 +104,15 @@ namespace Assets.OwlAssetTools.Editor
 
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
-                settings.spritePivot = CalSpritePivot(isometricWidth, r.height);
+                settings.spritePivot = Util.CalSpritePivot(r.width, r.height);
                 settings.spriteAlignment = (int)SpriteAlignment.Custom;
-
+                settings.textureType = TextureImporterType.Sprite;
+                settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
                 settings.spriteMode = (int) SpriteImportMode.Single;
-                settings.spritePixelsPerUnit = Mathf.Floor(CalPixelPerUnit(texture.width));
+                settings.spritePixelsPerUnit = Mathf.Floor(Util.CalPixelPerUnit(texture.width));
                 settings.mipmapEnabled = false;
-
                 importer.SetTextureSettings(settings);
+                
                 AssetDatabase.ImportAsset(targetDir, ImportAssetOptions.ForceUpdate);
             }
             AssetDatabase.Refresh();
@@ -127,19 +127,6 @@ namespace Assets.OwlAssetTools.Editor
             var colors = src.GetPixels(srcMinX, srcMinY, width, height);
             dest.SetPixels(0, 0, width, height, colors);
             return dest;
-        }
-
-        private static Vector2 CalSpritePivot(float isometricWidth, float height)
-        {
-            return new Vector2(0.5f, (float) (isometricWidth / 2f / height));
-        }
-
-
-        private static float CalPixelPerUnit(float width)
-        {
-            // ((width / 2) ^ 2 * 4 / 3) ^ (1 / 2);
-            return Mathf.Pow((width * width) / 3, 0.5f);
-            ;
         }
     }
 }

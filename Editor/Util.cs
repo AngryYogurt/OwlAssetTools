@@ -4,9 +4,9 @@ namespace Assets.OwlAssetTools.Editor
 {
     class Util
     {
-        public static Vector2 CalSpritePivot(float isometricWidth, float height)
+        public static Vector2 CalSpritePivot(float width, float height)
         {
-            return new Vector2(0.5f, (float) (isometricWidth / 2f / height));
+            return new Vector2(0.5f, (float) (CalPixelPerUnit(width) / 2f / height));
         }
 
 
