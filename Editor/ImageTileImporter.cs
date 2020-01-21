@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -8,22 +9,18 @@ namespace Assets.OwlAssetTools.Editor
 {
     class ImageTileImporter
     {
-        private static string[] ValidFileExt = {".png"};
-        private static string AssetFilePrefix = "asset_";
-        private static string AssetDirPrefix = "asset_";
-
-
         [MenuItem("Assets/OwlAssetTools/Import Tile Images Folder")]
         public static void Init()
         {
             var imgDir = EditorUtility.OpenFolderPanel("Import Tile Images Folder", Application.dataPath, "");
-            // asset location directory
-            var files = Directory.GetFiles(imgDir);
+            if (String.IsNullOrEmpty(imgDir) || !Directory.Exists(imgDir))
+            {
+                return;
+            }
+            Util.CopyToStock(imgDir);
 
-            // target directory
-            var targetDir = Path.Combine(Directory.GetParent(imgDir).FullName,
-                AssetDirPrefix + Path.GetFileName(imgDir));
-
+            // target directory 
+            var targetDir = Path.Combine(Util.ToolsResourceDir, Util.SpriteDirPrefix + Path.GetFileName(imgDir));
             if (Directory.Exists(targetDir))
             {
                 Debug.LogError("Target folder already exist, target=" + targetDir);
@@ -39,18 +36,18 @@ namespace Assets.OwlAssetTools.Editor
 
             AssetDatabase.Refresh();
 
+
             var targetFiles = new List<string>();
             // Copy file with transparent bounding box
             foreach (var srcFile in Directory.GetFiles(imgDir, "*.*", SearchOption.AllDirectories))
             {
-                if (!ValidFileExt.Contains(Path.GetExtension(srcFile).ToLower()))
+                if (!Util.ValidFileExt.Contains(Path.GetExtension(srcFile).ToLower()))
                 {
                     continue;
                 }
 
                 var srcFileName = Path.GetFileName(srcFile);
-                var srcDirName = Path.GetDirectoryName(srcFile.Replace(imgDir, targetDir));
-                var targetFile = Path.Combine(srcDirName, AssetFilePrefix + srcFileName);
+                var targetFile = Path.Combine(targetDir, Util.SpriteFilePrefix + srcFileName);
 
                 // Calculate bounding box
                 var srcAssetsPath = Util.GetAssetsPath(srcFile);
@@ -105,16 +102,18 @@ namespace Assets.OwlAssetTools.Editor
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
                 settings.spritePivot = Util.CalSpritePivot(r.width, r.height);
-                settings.spriteAlignment = (int)SpriteAlignment.Custom;
+                settings.spriteAlignment = (int) SpriteAlignment.Custom;
                 settings.textureType = TextureImporterType.Sprite;
                 settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
                 settings.spriteMode = (int) SpriteImportMode.Single;
                 settings.spritePixelsPerUnit = Mathf.Floor(Util.CalPixelPerUnit(texture.width));
                 settings.mipmapEnabled = false;
                 importer.SetTextureSettings(settings);
-                
+
                 AssetDatabase.ImportAsset(targetDir, ImportAssetOptions.ForceUpdate);
             }
+
+            FileUtil.DeleteFileOrDirectory(imgDir);
             AssetDatabase.Refresh();
         }
 

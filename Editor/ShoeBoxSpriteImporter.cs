@@ -23,6 +23,7 @@ namespace Assets.OwlAssetTools.Editor
         public static void Init()
         {
             var xmlPath = EditorUtility.OpenFilePanel("Import ShoeBox Sprite", Application.dataPath, "xml");
+
             // asset location directory
             var dir = Path.GetDirectoryName(xmlPath);
 
@@ -42,10 +43,13 @@ namespace Assets.OwlAssetTools.Editor
                 }
             }
 
-            var destName = "asset_" + Path.GetFileName(texturePath);
-            var destPath = Path.Combine(dir, destName);
+            var destName = Util.SpriteFilePrefix + Path.GetFileName(texturePath);
+            var destPath = Path.Combine(Util.ToolsResourceDir, destName);
 
             File.Copy(texturePath, destPath);
+
+            Util.CopyToStock(xmlPath);
+            Util.CopyToStock(texturePath);
 
             var assetPath = "Assets" + destPath.Substring(Application.dataPath.Length);
             AssetDatabase.Refresh();
@@ -84,9 +88,11 @@ namespace Assets.OwlAssetTools.Editor
             settings.textureFormat = TextureImporterFormat.AutomaticTruecolor;
             settings.spritePixelsPerUnit = Mathf.Floor(Util.CalPixelPerUnit(smds[0].rect.width));
             settings.mipmapEnabled = false;
-
             importer.SetTextureSettings(settings);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            FileUtil.DeleteFileOrDirectory(xmlPath);
+            FileUtil.DeleteFileOrDirectory(texturePath);
+            AssetDatabase.Refresh();
         }
     }
 }
